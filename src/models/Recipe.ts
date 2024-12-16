@@ -1,5 +1,4 @@
 import mongoose, { Document } from 'mongoose';
-import { version } from 'os';
 
 interface IRecipe extends Document {
   title: string;

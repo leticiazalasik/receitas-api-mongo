@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import Recipe from "../models/Recipe";
-import { promises } from "dns";
  
 export const recipeController = {
     // Criar uma nova receita
@@ -21,15 +20,36 @@ export const recipeController = {
         return res.status(400).json({ error: "Erro ao criar receita: título precisa ter mais de 3 carcteres." });    }
     },
  
-    // Listar todas as receitas
-    async list(req: Request, res: Response): Promise<any> {
-        try {
-            const recipes = await Recipe.find();
-            return res.json(recipes);
-        } catch (error) {
-            return res.status(400).json({ error: "Erro ao listar receitas" });
-        }
-    },
+   
+
+  // Listar todas as receitas com paginação
+  async list(req: Request, res: Response): Promise<any> {
+    try {
+      // Parâmetros de paginação
+      const page = parseInt(req.query.page as string) || 1;  // Página atual (default é 1)
+      const limit = parseInt(req.query.limit as string) || 3;  // Limite de itens por página (default é 10)
+
+      // Calcular o número de itens a pular (skip)
+      const skip = (page - 1) * limit;
+
+      // Encontrar as receitas com base na paginação
+      const recipes = await Recipe.find().skip(skip).limit(limit);
+
+      // Contar o total de receitas no banco de dados
+      const totalRecipes = await Recipe.countDocuments();
+
+      // Retornar as receitas e informações de paginação
+      return res.json({
+        currentPage: page,
+        totalPages: Math.ceil(totalRecipes / limit),  // Total de páginas
+        totalRecipes,
+        recipes,
+      });
+    } catch (error) {
+      return res.status(400).json({ error: 'Erro ao listar receitas' });
+    }
+  },
+
  
     // Buscar uma receita específica
     async getById(req: Request, res: Response): Promise<any> {
@@ -44,7 +64,7 @@ export const recipeController = {
         }
     },
 
-     // Buscar uma receita específica
+     // Editar uma receita específica
      async update(req: Request, res: Response): Promise<any> {
         try {
             const recipe = await Recipe.findByIdAndUpdate(
@@ -93,7 +113,29 @@ async getByTitle(req: Request, res: Response): Promise<any> {
     } catch (error) {
       return res.status(400).json({ error: "Erro ao buscar receitas" });
     }
+  },
+
+// Buscar receitas por nível de dificuldade
+async getByDifficulty(req: Request, res: Response): Promise<any> {
+    try {
+      // Pega o parâmetro 'difficulty' da URL
+      const { difficulty } = req.params;
+      
+      // Realiza a busca no banco de dados, com uma expressão regular para facilitar a busca
+      const recipes = await Recipe.find({ difficulty: new RegExp(`^${difficulty}$`, 'i') });
+  
+      // Verifica se encontrou receitas
+      if (recipes.length === 0) {
+        return res.status(404).json({ error: "Nenhuma receita encontrada para este nível de dificuldade." });
+      }
+  
+      // Retorna as receitas encontradas
+      return res.json(recipes);
+    } catch (error) {
+      return res.status(400).json({ error: "Erro ao buscar receitas" });
+    }
   }
+  
   
   
   
