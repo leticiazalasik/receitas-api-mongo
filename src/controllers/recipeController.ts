@@ -58,6 +58,48 @@ export const recipeController = {
             return res.status(400).json({ error: "Erro ao buscar receita" });
           }
     },
+
+     // Deletar receita
+async delete(req: Request, res: Response): Promise<any> {
+    try {
+      const recipe = await Recipe.findByIdAndDelete(req.params.id);
+      
+      if (!recipe) {
+        return res.status(404).json({ message: 'Receita não encontrada!' });
+      }
+      
+      // Mensagem de sucesso após a exclusão
+      return res.status(200).json({ message: 'Receita deletada com sucesso!'});
+      
+    } catch (error) {
+      return res.status(400).json({ error: "Erro ao buscar receita" });
+    }
+  },
+
+ // Buscar receitas por título com flexibilidade
+async getByTitle(req: Request, res: Response): Promise<any> {
+    console.log('Buscando receitas com o título:', req.params.title);
+  
+    const title = req.params.title.replace(/[-_]/g, ' ');  // Substitui hífens ou sublinhados por espaços
+  
+    try {
+      const recipes = await Recipe.find({ title: new RegExp(`^${title}$`, 'i') }); // Pesquisa mais flexível e sem diferenciar maiúsculas/minúsculas
+  
+      if (recipes.length === 0) {
+        return res.status(404).json({ error: "Nenhuma receita encontrada com esse título." });
+      }
+  
+      return res.json(recipes);
+    } catch (error) {
+      return res.status(400).json({ error: "Erro ao buscar receitas" });
+    }
+  }
+  
+  
+  
+  
+  
+    
 };
  
  
